@@ -1,70 +1,33 @@
 #!/usr/bin/env python3
-import json
+"""
+append_memory.py — Appends a new memory to Hard Memory (ChromaDB).
+
+Usage:
+    python3 ./context/append_memory.py "your memory text here"
+"""
 import os
 import sys
-from datetime import datetime
+
+# Ensure we can import hard_memory from the same directory
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from hard_memory import add_memory
 
+
 def main():
-    # Set the base directory to the root of the project
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    # The memories are stored in the context/ folder
-    memories_file = os.path.join(base_dir, 'memory', 'memories.json')
-    
-    # Read existing memories
-    if os.path.exists(memories_file):
-        try:
-            with open(memories_file, 'r') as f:
-                memories = json.load(f)
-        except (json.JSONDecodeError, ValueError):
-            print(f"File {memories_file} is empty or invalid JSON. Initializing as empty list.")
-            memories = []
-    else:
-        # If the file or directory doesn't exist, create it
-        if not os.path.exists(os.path.dirname(memories_file)):
-            os.makedirs(os.path.dirname(memories_file))
-        memories = []
-        
-    # Calculate next id
-    next_id = 1
-    if memories:
-        ids = [m.get('id', 0) for m in memories]
-        if ids:
-            next_id = max(ids) + 1
-        
-    # Check for CLI argument, otherwise prompt for input
+    # Get memory text from CLI args or interactive prompt
     if len(sys.argv) > 1:
-        user_input = " ".join(sys.argv[1:])
+        text = " ".join(sys.argv[1:])
     else:
-        user_input = input("Enter new memory: ")
-        
-    if not user_input.strip():
-        print("Memory cannot be empty.")
-        return
-        
-    # Get current date in custom format hh:mm dd/mm/yyyy
-    current_date = datetime.now().strftime("%H:%M %d/%m/%Y")
-    
-    # Create new memory object
-    new_memory = {
-        "id": next_id,
-        "date": current_date,
-        "memory": user_input
-    }
-    
-    memories.append(new_memory)
-    
-    # Write back to memories.json
-    with open(memories_file, 'w') as f:
-        json.dump(memories, f, indent=2)
-        
-    # Sync to vector database (Hard Memory)
-    try:
-        if add_memory(next_id, current_date, user_input):
-             print(f"Memory {next_id} appended to JSON and synced to Hard Memory (vector storage).")
-    except Exception as e:
-        print(f"Memory {next_id} appended to JSON, but synchronization to Hard Memory failed: {e}")
+        text = input("Enter new memory: ")
+
+    if not text.strip():
+        print("Error: Memory cannot be empty.")
+        sys.exit(1)
+
+    memory_id = add_memory(text)
+    print(f"Memory #{memory_id} saved to Hard Memory.")
+
 
 if __name__ == "__main__":
     main()

@@ -1,1 +1,4 @@
-.venv
+.venv/
+__pycache__/
+*.pyc
+context/memory/chroma_db/
