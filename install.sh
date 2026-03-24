@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "RACHID LOG"
+
 set -e
 
 # Define variables
