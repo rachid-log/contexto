@@ -35,13 +35,14 @@ def _next_id(collection):
     return max_id + 1
 
 
-def add_memory(text, date=None):
+def add_memory(text, date=None, project="global"):
     """
     Embeds the text and stores it in chromaDB.
 
     Args:
         text: The memory text to store.
         date: Optional date string. Defaults to current time in HH:MM dd/mm/yyyy format.
+        project: Optional project scope identifier. Defaults to "global".
 
     Returns:
         The integer ID assigned to the new memory.
@@ -55,32 +56,43 @@ def add_memory(text, date=None):
 
     collection.add(
         documents=[text],
-        metadatas=[{"id": next_id, "date": date}],
+        metadatas=[{"id": next_id, "date": date, "project": project}],
         ids=[str(next_id)]
     )
     return next_id
 
 
-def get_recent(count=5):
+def get_recent(count=5, project=None):
     """
     Returns the N most recent memories, sorted by ID descending.
 
     Args:
         count: Number of recent memories to return.
+        project: Optional project string to filter by.
 
     Returns:
-        List of dicts with keys: id, date, memory.
+        List of dicts with keys: id, date, project, memory.
     """
     collection = init_db()
     if collection.count() == 0:
         return []
 
-    all_data = collection.get()
+    where_clause = {"project": project} if project and project != "all" else None
+    
+    if where_clause:
+        all_data = collection.get(where=where_clause)
+    else:
+        all_data = collection.get()
+
+    if not all_data.get("ids"):
+        return []
+
     memories = []
     for i in range(len(all_data["ids"])):
         memories.append({
             "id": all_data["metadatas"][i].get("id", 0),
             "date": all_data["metadatas"][i].get("date", ""),
+            "project": all_data["metadatas"][i].get("project", "global"),
             "memory": all_data["documents"][i],
         })
 
@@ -89,25 +101,33 @@ def get_recent(count=5):
     return memories[:count]
 
 
-def search(query, top_k=5):
+def search(query, top_k=5, project=None):
     """
     Searches for the top-k most semantically similar memories.
 
     Args:
         query: The search text.
         top_k: Number of results to return.
+        project: Optional project string to filter by.
 
     Returns:
-        List of dicts with keys: id, date, memory, distance.
+        List of dicts with keys: id, date, project, memory, distance.
     """
     collection = init_db()
     if collection.count() == 0:
         return []
 
-    results = collection.query(
-        query_texts=[query],
-        n_results=min(top_k, collection.count())
-    )
+    where_clause = {"project": project} if project and project != "all" else None
+    
+    kwargs = {
+        "query_texts": [query],
+        "n_results": min(top_k, collection.count())
+    }
+    
+    if where_clause:
+        kwargs["where"] = where_clause
+
+    results = collection.query(**kwargs)
 
     formatted = []
     if results and results["ids"] and len(results["ids"]) > 0:
@@ -115,21 +135,28 @@ def search(query, top_k=5):
             formatted.append({
                 "id": results["metadatas"][0][i]["id"],
                 "date": results["metadatas"][0][i]["date"],
+                "project": results["metadatas"][0][i].get("project", "global"),
                 "memory": results["documents"][0][i],
                 "distance": results["distances"][0][i],
             })
     return formatted
 
 
-def get_all():
+def get_all(project=None):
     """Returns all memories stored in the collection."""
     collection = init_db()
+    where_clause = {"project": project} if project and project != "all" else None
+    if where_clause:
+        return collection.get(where=where_clause)
     return collection.get()
 
 
-def count():
+def count(project=None):
     """Returns the total number of memories."""
     collection = init_db()
+    where_clause = {"project": project} if project and project != "all" else None
+    if where_clause:
+        return len(collection.get(where=where_clause).get("ids", []))
     return collection.count()
 
 
