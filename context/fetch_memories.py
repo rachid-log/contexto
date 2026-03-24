@@ -57,9 +57,9 @@ def main():
         print("| ID | Date | Project | Memory | Relevance |")
         print("|---:|------|---------|--------|-----------|")
         for res in results:
-            # Distance is returned; smaller is better.
-            relevance = max(0, 1 - res['distance'])
-            print(f"| {res['id']} | {res['date']} | {res['project']} | {res['memory']} | {relevance:.2f} |")
+            # Distance is returned; smaller is better. ChromaDB L2 distance typically ranges 0-2 for normalized embeddings.
+            relevance_pct = max(0.0, (2.0 - res['distance']) / 2.0 * 100.0)
+            print(f"| {res['id']} | {res['date']} | {res['project']} | {res['memory']} | {relevance_pct:.1f}% |")
     else:
         # RECENCY FETCH
         count = args.count
