@@ -1,3 +1,6 @@
-1. When you need to check your memory, run the `echo "the number of memories (int)" | python3 ./conext/fetch_memories.py` file and specify how many memories you need to fetch.
+1. First check your memory by running:
+   - For recent context: `python3 ./context/fetch_memories.py <number>` (e.g., `python3 ./context/fetch_memories.py 10`)
+   - For semantic recall: `python3 ./context/fetch_memories.py --search "<topic/keyword>"` (e.g., `python3 ./context/fetch_memories.py --search "chroma implementation plan" --top 5`)
 
-2. Whenever you execute a task, append a one-paragraph memory using the `echo "one-sentence memory" | python3 ./conext/append_memory.py` script. The script is gonna prompt you to input the memory.
+2. Whenever you execute a task, append a one-sentence memory:
+   `python3 ./context/append_memory.py "your memory text here"` (e.g., `python3 ./context/append_memory.py "Implemented the ChromaDB vector storage for memory retrieval."`)

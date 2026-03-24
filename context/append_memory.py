@@ -4,6 +4,8 @@ import os
 import sys
 from datetime import datetime
 
+from hard_memory import add_memory
+
 def main():
     # Set the base directory to the root of the project
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -15,7 +17,7 @@ def main():
         try:
             with open(memories_file, 'r') as f:
                 memories = json.load(f)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ValueError):
             print(f"File {memories_file} is empty or invalid JSON. Initializing as empty list.")
             memories = []
     else:
@@ -57,7 +59,12 @@ def main():
     with open(memories_file, 'w') as f:
         json.dump(memories, f, indent=2)
         
-    print(f"Memory appended successfully with ID {next_id} in {memories_file}.")
+    # Sync to vector database (Hard Memory)
+    try:
+        if add_memory(next_id, current_date, user_input):
+             print(f"Memory {next_id} appended to JSON and synced to Hard Memory (vector storage).")
+    except Exception as e:
+        print(f"Memory {next_id} appended to JSON, but synchronization to Hard Memory failed: {e}")
 
 if __name__ == "__main__":
     main()
